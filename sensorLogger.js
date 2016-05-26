@@ -1,47 +1,49 @@
-// const serialport = require('serialport');
-const timesync  = require('timesync/server');
-const io = require('socket.io-client');
+const timesync = require('timesync');
+const serialport = require('serialport');
 
-// const SerialPort = serialport.SerialPort;
+const SerialPort = serialport.SerialPort;
 const deviceManufacturer = 'SEGGER';
 const timeSyncServer = 'http://10.24.20.161:8081';
 
-let started = false;
+if (typeof global.Promise === 'undefined') {
+    global.Promise = require('promise');
+}
 
-// getPort();
 
-let socket1 = io('http://10.24.20.161:8081');
-
-var ts = timesync.create({
-    server: io(timeSyncServer),
-    interval: 5000
+// create a timesync client syncing time every 10 seconds
+let ts = timesync.create({
+    peers: timeSyncServer,
+    interval: 10000
 });
 
-setInterval(function () {
-  var now = new Date(ts.now());
-  // document.write('now: ' + now.toISOString() + ' ms<br>');
-}, 1000);
+// get notified on changes in the offset
+ts.on('change', function (offset) {
+    console.log('changed offset: ' + offset + ' ms');
+});
 
-//
-// function getPort(callback){
-//
-//     serialport.list(function (err, ports) {
-//         ports.forEach(function(port) {
-//             if(port.manufacturer === deviceManufacturer){
-//                 connectToPort(port.comName);
-//             }
-//         });
-//     });
-// }
-//
-// function connectToPort(portName){
-//     console.log(`Listening on port ${portName}....`);
-//     var port = new SerialPort(portName, {
-//         parser: serialport.parsers.readline('\n')
-//     });
-//
-//     port.on('data', function (data) {
-//         // ts.now();
-//         console.log('Data: ' + data);
-//     });
-// }
+ts.on('sync', function (state) {
+    console.log('sync', state);
+});
+getPort();
+
+function getPort(callback){
+
+    serialport.list(function (err, ports) {
+        ports.forEach(function(port) {
+            if(port.manufacturer === deviceManufacturer){
+                connectToPort(port.comName);
+            }
+        });
+    });
+}
+
+function connectToPort(portName){
+    console.log(`Listening on port ${portName}....`);
+    var port = new SerialPort(portName, {
+        parser: serialport.parsers.readline('\n')
+    });
+
+    port.on('data', function (data) {
+        console.log(ts.now(),'Data:',data);
+    });
+}
