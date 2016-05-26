@@ -4,8 +4,8 @@ const DDPClient = require("ddp");
 
 const SerialPort = serialport.SerialPort;
 const deviceManufacturer = 'SEGGER';
-const timeSyncServer = 'http://10.24.20.161:8081';
-const meteorServer =   'wss://10.24.20.161/websocket'
+const timeSyncServer = 'http://129.241.103.248:8081';
+const meteorServer =   'wss://129.241.103.248/websocket'
 
 
 if (typeof global.Promise === 'undefined') {
