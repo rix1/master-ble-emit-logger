@@ -5,7 +5,7 @@ const DDPClient = require("ddp");
 const SerialPort = serialport.SerialPort;
 const deviceManufacturer = 'SEGGER';
 const timeSyncServer = 'http://129.241.103.248:8081';
-const meteorServer =   'wss://129.241.103.248/websocket'
+const meteorServer =   'ws://129.241.103.248:3000/websocket'
 
 
 if (typeof global.Promise === 'undefined') {
@@ -25,35 +25,23 @@ ddpclient.connect(function(error, wasReconnect) {
     // a server connection is re-established
     if (error) {
         console.log('DDP connection error!');
+        console.log(error);
         return;
     }
-
     if (wasReconnect) {
         console.log('Reestablishment of a connection.');
     }
-
     console.log('connected!');
-
-    ddpclient.call(
-        'hello',             // name of Meteor Method being called
-        ['foo', 'bar'],            // parameters to send to Meteor Method
-        function (err, result) {   // callback which returns the method call results
-            console.log('called function, result: ' + result);
-        },
-        function () {              // callback which fires when server has finished
-            console.log('updated');  // sending any updated documents as a result of
-        }
-    );
 });
 
-ddpclient.on('message', function (msg) {
-    console.log("ddp message: " + msg);
-});
+// ddpclient.on('message', function (msg) {
+//     console.log("ddp message: " + msg);
+// });
 
 // create a timesync client syncing time every 10 seconds
 let ts = timesync.create({
     peers: timeSyncServer,
-    interval: 10000
+    interval: 5000
 });
 
 // get notified on changes in the offset
@@ -96,5 +84,26 @@ function connectToPort(portName){
 
     port.on('data', function (data) {
         console.log(ts.now(),'Data:',data);
+        let msg = {
+            msgid: data,
+            timestamp: ts.now(),
+            eventtype: 'send',
+            clinetid: 'ble_node'
+        }
+        registerBLEmessage(msg)
     });
+}
+
+function registerBLEmessage(message){
+    ddpclient.call(
+        'registerEvent',               // name of Meteor Method being called
+        [message],                            // parameters to send to Meteor Method
+        function (err, result) {            // callback which returns the method call results
+            // err & console.log(err);
+            // console.log(result);
+        },
+        function () {                       // callback which fires when server has finished
+            // console.log('server has finished');  // sending any updated documents as a result of
+        }
+    );
 }
