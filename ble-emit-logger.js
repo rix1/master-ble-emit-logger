@@ -4,10 +4,27 @@ const DDPClient = require("ddp");
 
 const SerialPort = serialport.SerialPort;
 const deviceManufacturer = 'SEGGER';
-const timeSyncServer = 'http://129.241.102.116:8123';
+
 const meteorServer =   'ws://129.241.102.116:3000/websocket'
 
 var meteorConnected = false;
+
+const mbp = 'http://129.241.103.248:8081/timesync';
+// const master = 'http://129.241.102.116:8123/timesync';
+
+// create a timesync client syncing time every 5 seconds
+var ts = timesync.create({
+  peers: mbp,
+  interval: 5000
+});
+
+// get notified on changes in the offset
+ts.on('change', function (offset) {
+  console.log('changed offset: ' + offset + ' ms', 'remote: ' + ts.now() + ' local: ' + Date.now());
+});
+
+
+
 
 if (typeof global.Promise === 'undefined') {
     global.Promise = require('promise');
@@ -15,7 +32,7 @@ if (typeof global.Promise === 'undefined') {
 
 var ddpclient = new DDPClient({
     autoReconnect : true,
-    autoReconnectTimer : 30,
+    autoReconnectTimer : 50,
     maintainCollections : true,
     ddpVersion : '1',  // ['1', 'pre2', 'pre1'] available
     url: meteorServer
@@ -35,35 +52,6 @@ ddpclient.connect(function(error, wasReconnect) {
     }
     meteorConnected = true;
     console.log('connected!');
-});
-
-// ddpclient.on('message', function (msg) {
-//     console.log("ddp message: " + msg);
-// });
-
-// create a timesync client syncing time every 5 seconds
-let ts = timesync.create({
-    peers: timeSyncServer,
-    interval: 5000
-});
-
-// get notified on changes in the offset
-ts.on('change', function (offset) {
-    console.log('changed offset: ' + offset + ' ms');
-});
-
-ts.on('sync', function (state) {
-    console.log('sync', state);
-});
-
-ts.send = function (socket, data) {
-  console.log('send', data);
-  socket.emit('timesync', data);
-};
-//
-ts.on('timesync', function (data) {
-  console.log('receive', data);
-  ts.receive(null, data);
 });
 
 getPort();
