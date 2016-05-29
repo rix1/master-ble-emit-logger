@@ -5,9 +5,12 @@ if (typeof global.Promise === 'undefined') {
 }
 var timesync = require('timesync');
 
+// const mbp = 'http://129.241.103.248:8081/timesync';
+// const master = 'http://129.241.102.116:8123/timesync';
+
 // create a timesync client
 var ts = timesync.create({
-  peers: 'http://129.241.102.116:8123',
+  peers: mbp,
   interval: 5000
 });
 
@@ -19,5 +22,5 @@ ts.on('change', function (offset) {
 // get synchronized time
 setInterval(function () {
   var now = new Date(ts.now());
-  console.log('remote: ' + ts.now() + ' local: ' + Date.now();
+  console.log('remote: ' + ts.now() + ' local: ' + Date.now());
 }, 1000);
