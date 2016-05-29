@@ -51,7 +51,7 @@ ddpclient.connect(function(error, wasReconnect) {
         console.log('Reestablishment of a connection.');
     }
     meteorConnected = true;
-    console.log('connected!');
+    console.log('connected to Meteor');
 });
 
 getPort();
