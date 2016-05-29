@@ -20,7 +20,7 @@ var ts = timesync.create({
 
 // get notified on changes in the offset
 ts.on('change', function (offset) {
-  console.log('changed offset: ' + offset + ' ms', 'remote: ' + ts.now() + ' local: ' + Date.now());
+  // console.log('changed offset: ' + offset + ' ms', 'remote: ' + ts.now() + ' local: ' + Date.now());
 });
 
 
@@ -59,6 +59,7 @@ getPort();
 function getPort(callback){
 
     serialport.list(function (err, ports) {
+        // console.log(ports);
         ports.forEach(function(port) {
             if(port.manufacturer === deviceManufacturer){
                 connectToPort(port.comName);
