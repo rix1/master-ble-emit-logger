@@ -4,9 +4,10 @@ const DDPClient = require("ddp");
 
 const SerialPort = serialport.SerialPort;
 const deviceManufacturer = 'SEGGER';
-const timeSyncServer = 'http://129.241.103.248:8081';
-const meteorServer =   'ws://129.241.103.248:3000/websocket'
+const timeSyncServer = 'http://129.241.102.116:8123';
+const meteorServer =   'ws://129.241.102.116:3000/websocket'
 
+var meteorConnected = false;
 
 if (typeof global.Promise === 'undefined') {
     global.Promise = require('promise');
@@ -14,7 +15,7 @@ if (typeof global.Promise === 'undefined') {
 
 var ddpclient = new DDPClient({
     autoReconnect : true,
-    autoReconnectTimer : 500,
+    autoReconnectTimer : 30,
     maintainCollections : true,
     ddpVersion : '1',  // ['1', 'pre2', 'pre1'] available
     url: meteorServer
@@ -26,11 +27,13 @@ ddpclient.connect(function(error, wasReconnect) {
     if (error) {
         console.log('DDP connection error!');
         console.log(error);
+        meteorConnected = false;
         return;
     }
     if (wasReconnect) {
         console.log('Reestablishment of a connection.');
     }
+    meteorConnected = true;
     console.log('connected!');
 });
 
@@ -38,7 +41,7 @@ ddpclient.connect(function(error, wasReconnect) {
 //     console.log("ddp message: " + msg);
 // });
 
-// create a timesync client syncing time every 10 seconds
+// create a timesync client syncing time every 5 seconds
 let ts = timesync.create({
     peers: timeSyncServer,
     interval: 5000
@@ -53,15 +56,15 @@ ts.on('sync', function (state) {
     console.log('sync', state);
 });
 
-// ts.send = function (socket, data) {
-//   //console.log('send', data);
-//   socket.emit('timesync', data);
-// };
+ts.send = function (socket, data) {
+  console.log('send', data);
+  socket.emit('timesync', data);
+};
 //
-// socket1.on('timesync', function (data) {
-//   //console.log('receive', data);
-//   ts.receive(null, data);
-// });
+ts.on('timesync', function (data) {
+  console.log('receive', data);
+  ts.receive(null, data);
+});
 
 getPort();
 
@@ -83,27 +86,31 @@ function connectToPort(portName){
     });
 
     port.on('data', function (data) {
-        console.log(ts.now(),'Data:',data);
+        console.log(ts.now(),'Data:',data,'currentTime:', Date.now());
         let msg = {
-            msgid: data,
+            msg_id: data,
             timestamp: ts.now(),
             eventtype: 'send',
-            clinetid: 'ble_node'
+            client_id: 'ble_node'
         }
         registerBLEmessage(msg)
     });
 }
 
 function registerBLEmessage(message){
-    ddpclient.call(
-        'registerEvent',               // name of Meteor Method being called
-        [message],                            // parameters to send to Meteor Method
-        function (err, result) {            // callback which returns the method call results
-            // err & console.log(err);
-            // console.log(result);
-        },
-        function () {                       // callback which fires when server has finished
-            // console.log('server has finished');  // sending any updated documents as a result of
-        }
-    );
+    if(meteorConnected){
+        ddpclient.call(
+            'registerEvent',               // name of Meteor Method being called
+            [message],                            // parameters to send to Meteor Method
+            function (err, result) {            // callback which returns the method call results
+                // err & console.log(err);
+                // console.log(result);
+            },
+            function () {                       // callback which fires when server has finished
+                // console.log('server has finished');  // sending any updated documents as a result of
+            }
+        );
+    }else{
+        console.error("Could not registerBLEmessage - Meteor not connected");
+    }
 }
