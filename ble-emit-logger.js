@@ -9,7 +9,7 @@ const meteorServer =   'ws://129.241.102.116:3000/websocket'
 
 var meteorConnected = false;
 
-const mbp = 'http://129.241.103.248:8081/timesync';
+const mbp = 'http://129.241.103.248:8123/timesync';
 // const master = 'http://129.241.102.116:8123/timesync';
 
 // create a timesync client syncing time every 5 seconds
